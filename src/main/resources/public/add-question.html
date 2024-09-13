@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Exam Portal - Questions Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 10px 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Big Exam Portal - Questions Panel</h2>
+
+    <!-- Form for Adding/Editing a Question -->
+    <form id="questionForm">
+        <input type="hidden" id="questionId">
+
+        <label for="questionText">Question Text:</label>
+        <input type="text" id="questionText" required>
+
+        <label for="option1">Option 1:</label>
+        <input type="text" id="option1" required>
+
+        <label for="option2">Option 2:</label>
+        <input type="text" id="option2" required>
+
+        <label for="option3">Option 3:</label>
+        <input type="text" id="option3" required>
+
+        <label for="option4">Option 4:</label>
+        <input type="text" id="option4" required>
+
+        <label for="correctAnswer">Correct Answer:</label>
+        <select id="correctAnswer" required>
+            <option value="">Select Correct Answer</option>
+            <option value="option1">Option 1</option>
+            <option value="option2">Option 2</option>
+            <option value="option3">Option 3</option>
+            <option value="option4">Option 4</option>
+        </select>
+
+        <button type="submit">Submit</button>
+        <button type="button" onclick="resetForm()">Reset</button>
+    </form>
+
+    <!-- Display the Questions -->
+    <h2>Question List</h2>
+    <table id="questionTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Question Text</th>
+                <th>Options</th>
+                <th>Correct Answer</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Questions will be dynamically inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            fetchQuestions();
+
+            const form = document.getElementById('questionForm');
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const id = document.getElementById('questionId').value;
+                const question = {
+                    questionText: document.getElementById('questionText').value,
+                    options: [
+                        document.getElementById('option1').value,
+                        document.getElementById('option2').value,
+                        document.getElementById('option3').value,
+                        document.getElementById('option4').value
+                    ],
+                    correctAnswer: document.getElementById('correctAnswer').value
+                };
+
+                if (id) {
+                    updateQuestion(id, question);
+                } else {
+                    addQuestion(question);
+                }
+            });
+        });
+
+        function fetchQuestions() {
+            fetch('/api/questions')
+                .then(response => response.json())
+                .then(questions => {
+                    const tbody = document.querySelector('#questionTable tbody');
+                    tbody.innerHTML = '';
+                    questions.forEach(question => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${question.id}</td>
+                            <td>${question.questionText}</td>
+                            <td>${question.options.join(', ')}</td>
+                            <td>${question.correctAnswer}</td>
+                            <td>
+                                <button onclick="editQuestion(${question.id})">Edit</button>
+                                <button onclick="deleteQuestion(${question.id})">Delete</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error fetching questions:', error));
+        }
+
+        function addQuestion(question) {
+            fetch('/api/questions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(question)
+            })
+            .then(response => response.json())
+            .then(() => {
+                alert('Question added successfully');
+                resetForm();
+                fetchQuestions();
+            })
+            .catch(error => console.error('Error adding question:', error));
+        }
+
+        function updateQuestion(id, question) {
+            fetch(`/api/questions/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(question)
+            })
+            .then(response => response.json())
+            .then(() => {
+                alert('Question updated successfully');
+                resetForm();
+                fetchQuestions();
+            })
+            .catch(error => console.error('Error updating question:', error));
+        }
+
+        function deleteQuestion(id) {
+            if (confirm('Are you sure you want to delete this question?')) {
+                fetch(`/api/questions/${id}`, { method: 'DELETE' })
+                .then(() => {
+                    alert('Question deleted successfully');
+                    fetchQuestions();
+                })
+                .catch(error => console.error('Error deleting question:', error));
+            }
+        }
+
+        function editQuestion(id) {
+            fetch(`/api/questions/${id}`)
+                .then(response => response.json())
+                .then(question => {
+                    document.getElementById('questionId').value = question.id;
+                    document.getElementById('questionText').value = question.questionText;
+                    document.getElementById('option1').value = question.options[0];
+                    document.getElementById('option2').value = question.options[1];
+                    document.getElementById('option3').value = question.options[2];
+                    document.getElementById('option4').value = question.options[3];
+                    document.getElementById('correctAnswer').value = question.correctAnswer;
+                });
+        }
+
+        function resetForm() {
+            document.getElementById('questionId').value = '';
+            document.getElementById('questionForm').reset();
+        }
+    </script>
+
+</body>
+</html>
