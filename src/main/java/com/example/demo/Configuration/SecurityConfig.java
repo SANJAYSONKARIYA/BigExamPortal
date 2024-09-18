@@ -28,36 +28,41 @@ public class SecurityConfig {
 
  @Bean
  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+     http.csrf().disable()
+         .authorizeHttpRequests(auth -> auth
+             // Permit access to static resources
+             .requestMatchers("/assets/css/**", "/assets/img/**", "/assets/js/**", "/assets/vendor/**").permitAll()
+             
+             // Permit access to certain HTML pages and API endpoints
+             .requestMatchers("/exam.html", "/add-question.html", "/Answer.html", "/submit-answers", "/api/questions", "/api/questions/**",
+                              "/api", "/submitAnswers", "/api/submit-answers", "/api/answers/**", "/", "/about", "/team", "/contact/**",
+                              "/feedback/**", "/events", "/footer", "/partner", "/register", "/home").permitAll()
 
-	  http.csrf().disable().authorizeHttpRequests().requestMatchers("/exam.html").permitAll().requestMatchers("/add-question.html").permitAll()
-	  .requestMatchers("Answer.html").permitAll()
-	  .requestMatchers("/submit-answers").permitAll().requestMatchers("/api/questions").permitAll().requestMatchers("/api/questions/**").permitAll()
-	  .requestMatchers("/api").permitAll().requestMatchers("/submitAnswers").permitAll().requestMatchers("/api/submit-answers").permitAll().requestMatchers("/api/answers/**").permitAll()
-	  .requestMatchers("/").permitAll().requestMatchers("/about")
-	  .permitAll().requestMatchers("/team").permitAll().requestMatchers("/contact").permitAll().requestMatchers("/events").permitAll()
-	  .requestMatchers("/footer").permitAll().requestMatchers("/partner").permitAll().requestMatchers("/register").permitAll().requestMatchers("home")
-	    .permitAll().and().formLogin().loginPage("/login").loginProcessingUrl("/login")
-	    .defaultSuccessUrl("/home", true).permitAll().and().logout().invalidateHttpSession(true)
-	    .clearAuthentication(true).logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-	    .logoutSuccessUrl("/login?logout").permitAll();
-	 
-      http.authorizeHttpRequests(
-    		  
-    		  auth -> auth.requestMatchers("assets/css/**", "assets/img/**", "assets/js/**", "assets/vendor/**").permitAll()
-    		  
-    		  );
-      
-      
-      
- 
-  return http.build();
-
+             // Require authentication for all other requests
+             .anyRequest().authenticated()
+         )
+         .formLogin(form -> form
+             .loginPage("/login")
+             .loginProcessingUrl("/login")
+             .defaultSuccessUrl("/home", true)
+             .permitAll()
+         )
+         .logout(logout -> logout
+             .invalidateHttpSession(true)
+             .clearAuthentication(true)
+             .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+             .logoutSuccessUrl("/login?logout")
+             .permitAll()
+         );
+     
+     return http.build();
  }
+
  
 @Bean
 WebSecurityCustomizer customizeWebSecurity() {
 	
-	return (web) -> web.ignoring().requestMatchers("assets/css/**", "assets/img/**", "assets/js/**", "assets/vendor/**");
+	return (web) -> web.ignoring().requestMatchers("/assets/css/**", "/assets/img/**", "/assets/js/**", "/assets/vendor/**");
 }
  
  
